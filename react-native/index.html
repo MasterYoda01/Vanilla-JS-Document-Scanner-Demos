@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Quickly detect document boundaries from a live camera stream and crop the document out before normalizing it further through perspective correction, deskewing, and more." />
+    <meta name="keywords" content="camera based quadrilateral detection and normalization" />
+    <title>Detect the boundary of a document and normalize it</title>
+    <script src="https://cdn.jsdelivr.net/npm/dynamsoft-core@3.0.10/dist/core.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dynamsoft-document-normalizer@2.0.11/dist/ddn.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dynamsoft-capture-vision-router@2.0.11/dist/cvr.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dynamsoft-camera-enhancer@4.0.0/dist/dce.js"></script>
+    <style>
+      .scanner {
+        position: absolute;
+        left: 0px;
+        top: 0px;
+        width: 100%;
+        height: 100%;
+        display: none;
+        background: white;
+      }
+
+      .btn-close {
+        position: absolute;
+        right: 0px;
+        top: 0px;
+      }
+
+      .dce-video-container {
+        width: 100%;
+        height: 100%;
+      }
+
+      .dce-sel-camera {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        height: 20px;
+      }
+
+      .dce-sel-resolution {
+        position: absolute;
+        top: 20px;
+        left: 0px;
+      }
+
+      @keyframes dce-rotate {
+        from { transform: rotate(0turn); }
+        to { transform: rotate(1turn); }
+      }
+    </style>
+</head>
+<body>
+  <div id="app">
+    <div class="home">
+      <button class="btn-start-scanning">Start Scanning</button>
+    </div>
+    <div class="scanner">
+      <div class="dce-video-container"></div>
+      <svg class="dce-bg-loading"
+        style="display:none;position:absolute;left:0;top:0;right:0;bottom:0;margin:auto;width:40%;height:40%;fill:#aaa;animation:1s linear infinite dce-rotate;"
+        viewBox="0 0 1792 1792">
+        <path d="M1760 896q0 176-68.5 336t-184 275.5-275.5 184-336 68.5-336-68.5-275.5-184-184-275.5-68.5-336q0-213 97-398.5t265-305.5 374-151v228q-221 45-366.5 221t-145.5 406q0 130 51 248.5t136.5 204 204 136.5 248.5 51 248.5-51 204-136.5 136.5-204 51-248.5q0-230-145.5-406t-366.5-221v-228q206 31 374 151t265 305.5 97 398.5z" />
+      </svg>
+      <select class="dce-sel-camera"></select>
+      <select class="dce-sel-resolution">
+        <option class="dce-opt-gotResolution" value="got"></option>
+        <option data-width="3840" data-height="2160">3840x2160</option>
+        <option data-width="1920" data-height="1080">1920x1080</option>
+        <option data-width="1280" data-height="720">1280x720</option>
+        <option data-width="640" data-height="480">640x480</option>
+      </select>
+      <button class="btn-close">Close</button>
+    </div>
+  </div>
+  <script>
+    let cameraView;
+    let router;
+    window.onload = async function(){
+      Dynamsoft.License.LicenseManager.initLicense(
+        "DLS2eyJvcmdhbml6YXRpb25JRCI6IjIwMDAwMSJ9"
+      );
+      Dynamsoft.CVR.CaptureVisionRouter.preloadModule(["DDN"]);
+      await initDCE();
+      router = await Dynamsoft.CVR.CaptureVisionRouter.createInstance();
+      registerEvents();
+    }
+
+    function registerEvents(){
+      document.getElementsByClassName("btn-start-scanning")[0].addEventListener("click",function(){
+        startDetecting();
+      })
+      document.getElementsByClassName("btn-close")[0].addEventListener("click",function(){
+        stopDetecting();
+      })
+    }
+
+    async function initDCE() {
+      let cameraView = await Dynamsoft.DCE.CameraView.createInstance(document.getElementsByClassName("scanner")[0]);
+      cameraEnhancer = await Dynamsoft.DCE.CameraEnhancer.createInstance(
+        cameraView
+      );
+     // document.getElementsByClassName("scanner")[0].append(cameraView.getUIElement());
+    }
+
+    async function startDetecting(){
+      console.log("startDetecting");
+      document.getElementsByClassName("scanner")[0].style.display = "block";
+      await cameraEnhancer.open();
+    }
+
+    function detectFrame(){
+      let image = cameraEnhancer.fetchImage();
+    }
+
+    function stopDetecting(){
+      cameraEnhancer.close();
+      document.getElementsByClassName("scanner")[0].style.display = "none";
+    }
+
+  </script>
+</body>
+</html>
