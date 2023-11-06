@@ -84,7 +84,7 @@
       );
       Dynamsoft.CVR.CaptureVisionRouter.preloadModule(["DDN"]);
       await initDCE();
-      router = await Dynamsoft.CVR.CaptureVisionRouter.createInstance();
+      await initCVR();
       registerEvents();
     }
 
@@ -97,27 +97,40 @@
       })
     }
 
+    async function initCVR(){
+      router = await Dynamsoft.CVR.CaptureVisionRouter.createInstance();
+      router.setInput(cameraEnhancer);
+      const resultReceiver = new Dynamsoft.CVR.CapturedResultReceiver();
+      resultReceiver.onCapturedResultReceived = handleCapturedResult;
+      router.addResultReceiver(resultReceiver);
+    }
+
+    async function handleCapturedResult(result) {
+      console.log(result);
+    }
+    
     async function initDCE() {
       let cameraView = await Dynamsoft.DCE.CameraView.createInstance(document.getElementsByClassName("scanner")[0]);
       cameraEnhancer = await Dynamsoft.DCE.CameraEnhancer.createInstance(
         cameraView
       );
-     // document.getElementsByClassName("scanner")[0].append(cameraView.getUIElement());
     }
 
     async function startDetecting(){
       console.log("startDetecting");
       document.getElementsByClassName("scanner")[0].style.display = "block";
       await cameraEnhancer.open();
+      await router.startCapturing("detect-document-boundaries");
     }
 
     function detectFrame(){
       let image = cameraEnhancer.fetchImage();
     }
 
-    function stopDetecting(){
+    async function stopDetecting(){
       cameraEnhancer.close();
       document.getElementsByClassName("scanner")[0].style.display = "none";
+      await router.stopCapturing();
     }
 
   </script>
