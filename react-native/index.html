@@ -83,6 +83,8 @@
     </div>
   </div>
   <script>
+    let colorMode = 0;
+    let defaultSettings = "";
     let cameraView;
     let router;
     let previousResults = [];
@@ -134,6 +136,7 @@
                 await captureFrame(detectionResult);
                 stopDetecting();  
               } catch (error) {
+                console.log(error);
                 reset();
               }
             }
@@ -162,8 +165,31 @@
       settings.roiMeasuredInPercentage = 0;
       settings.roi.points = detectionResult.location.points;
       await router.updateSettings("normalize-document", settings);
-      let normalizeResult = await router.capture(image.toCanvas(),"normalize-document");
+      await saveDefaultSettings();
+      await updateColorMode();
+      let normalizeResult = await router.capture(image.toCanvas(),"");
+      console.log(normalizeResult);
       return normalizeResult.items[0].toCanvas().toDataURL();
+    }
+
+    async function updateColorMode() {
+      let str;
+      if (colorMode == 0) {
+        str = "ICM_BINARY";
+      }else if (colorMode == 1) {
+        str = "ICM_GRAYSCALE";
+      }else{
+        str = "ICM_COLOUR";
+      }
+      let settingsString = defaultSettings.replace("ICM_COLOUR",str);
+      await router.initSettings(settingsString);
+    }
+
+    async function saveDefaultSettings(){
+      if (!defaultSettings) {
+        let settingsObject = await router.outputSettings();
+        defaultSettings = JSON.stringify(settingsObject);
+      }
     }
 
     function steady() {
@@ -182,6 +208,7 @@
       reset();
       document.getElementsByClassName("scanner")[0].style.display = "block";
       await cameraEnhancer.open();
+      await router.resetSettings();
       await router.startCapturing("detect-document-boundaries");
     }
 
