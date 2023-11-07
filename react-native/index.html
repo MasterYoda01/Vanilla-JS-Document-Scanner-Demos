@@ -295,12 +295,16 @@
     }
     
     async function startDetecting(){
-      console.log("startDetecting");
-      reset();
-      document.getElementsByClassName("scanner")[0].style.display = "block";
-      await cameraEnhancer.open();
-      await router.resetSettings();
-      await router.startCapturing("detect-document-boundaries");
+      if (router && cameraEnhancer) {
+        console.log("startDetecting");
+        reset();
+        document.getElementsByClassName("scanner")[0].style.display = "block";
+        await cameraEnhancer.open();
+        await router.resetSettings();
+        await router.startCapturing("detect-document-boundaries");
+      }else{
+        alert("Please wait for initialization.")
+      }
     }
 
     async function stopDetecting(){
