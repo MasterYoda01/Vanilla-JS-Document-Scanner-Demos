@@ -62,6 +62,15 @@
   <div id="app">
     <div class="home">
       <button class="btn-start-scanning">Start Scanning</button>
+      <label>
+        Color Mode:
+        <select class="sel-color-mode">
+          <option selected>Black & White</option>
+          <option>Gray</option>
+          <option>Color</option>
+        </select>
+      </label>
+      
       <img class="captured" alt="captured"/>
     </div>
     <div class="scanner">
@@ -83,7 +92,6 @@
     </div>
   </div>
   <script>
-    let colorMode = 0;
     let defaultSettings = "";
     let cameraView;
     let router;
@@ -173,6 +181,7 @@
 
     async function updateColorMode() {
       let str;
+      let colorMode = document.getElementsByClassName("sel-color-mode")[0].selectedIndex;
       if (colorMode == 0) {
         str = "ICM_BINARY";
       }else if (colorMode == 1) {
