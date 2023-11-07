@@ -162,7 +162,11 @@
         document.getElementsByClassName("editor")[0].style.display = "none";
       })
       document.getElementsByClassName("btn-cancel")[0].addEventListener("click",function(){
-        document.getElementsByClassName("editor")[0].style.display = "none";
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage("");
+        }else{
+          document.getElementsByClassName("editor")[0].style.display = "none";
+        }
       })
     }
 
@@ -247,9 +251,13 @@
     }
 
     function displayNormalizedImage(normalized){
-      let imgEl = document.getElementsByClassName("captured")[0];
-      imgEl.src = normalized;
-      imgEl.style.display = "block";
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(normalized);
+      }else{
+        let imgEl = document.getElementsByClassName("captured")[0];
+        imgEl.src = normalized;
+        imgEl.style.display = "block";
+      }
     }
 
     async function normalizedImage(image,points){
@@ -312,6 +320,9 @@
       cameraEnhancer.close();
       document.getElementsByClassName("scanner")[0].style.display = "none";
       await router.stopCapturing();
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage("");
+      }
     }
 
     function reset(){
