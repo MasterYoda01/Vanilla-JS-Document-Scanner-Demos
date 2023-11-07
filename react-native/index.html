@@ -86,6 +86,7 @@
     let cameraView;
     let router;
     let previousResults = [];
+    let capturing = false;
     window.onload = async function(){
       Dynamsoft.License.LicenseManager.initLicense(
         "DLS2eyJvcmdhbml6YXRpb25JRCI6IjIwMDAwMSJ9"
@@ -122,27 +123,44 @@
 
     async function handleCapturedResult(result) {
       let detectionResult = result.items[0];
-      if (previousResults.length >= 2) {
-        previousResults.push(detectionResult)
-        if (steady() == true) {
-          console.log("steady");
-          captureFrame(detectionResult);
-          stopDetecting();
+      if (detectionResult) {
+        if (previousResults.length >= 2) {
+          previousResults.push(detectionResult)
+          if (steady() == true) {
+            if (capturing == false) {
+              console.log("steady");
+              capturing = true;
+              await captureFrame(detectionResult);
+              stopDetecting();
+            }
+            
+          }else{
+            console.log("shift result");
+            previousResults.shift();
+          }
         }else{
-          console.log("shift result");
-          previousResults.shift();
+          console.log("add result");
+          previousResults.push(detectionResult);
         }
-      }else{
-        console.log("add result");
-        previousResults.push(detectionResult);
       }
     }
 
-    function captureFrame(detectionResult){
+    async function captureFrame(detectionResult){
       let image = cameraEnhancer.fetchImage();
       let imgEl = document.getElementsByClassName("captured")[0];
-      imgEl.src = image.toCanvas().toDataURL();
+      imgEl.src = (await normalizedImage(image,detectionResult));
       imgEl.style.display = "block";
+    }
+
+    async function normalizedImage(image,detectionResult){
+      let settings = await router.getSimplifiedSettings(
+        "normalize-document"
+      );
+      settings.roiMeasuredInPercentage = 0;
+      settings.roi.points = detectionResult.location.points;
+      await router.updateSettings("normalize-document", settings);
+      let normalizeResult = await router.capture(image.toCanvas(),"normalize-document");
+      return normalizeResult.items[0].toCanvas().toDataURL();
     }
 
     function steady() {
@@ -158,17 +176,22 @@
     
     async function startDetecting(){
       console.log("startDetecting");
-      previousResults = [];
+      reset();
       document.getElementsByClassName("scanner")[0].style.display = "block";
       await cameraEnhancer.open();
       await router.startCapturing("detect-document-boundaries");
     }
 
     async function stopDetecting(){
-      previousResults = [];
+      reset();
       cameraEnhancer.close();
       document.getElementsByClassName("scanner")[0].style.display = "none";
       await router.stopCapturing();
+    }
+
+    function reset(){
+      previousResults = [];
+      capturing = false;
     }
 
   </script>
