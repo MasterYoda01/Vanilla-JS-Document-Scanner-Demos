@@ -130,10 +130,13 @@
             if (capturing == false) {
               console.log("steady");
               capturing = true;
-              await captureFrame(detectionResult);
-              stopDetecting();
+              try {
+                await captureFrame(detectionResult);
+                stopDetecting();  
+              } catch (error) {
+                reset();
+              }
             }
-            
           }else{
             console.log("shift result");
             previousResults.shift();
