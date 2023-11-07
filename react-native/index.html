@@ -130,6 +130,20 @@
       await initDCE();
       await initCVR();
       registerEvents();
+      parseURLParams();
+    }
+
+    function parseURLParams(){
+      let colorMode = parseInt(getURLParameter("colorMode"));
+      document.getElementsByClassName("sel-color-mode")[0].selectedIndex = colorMode;
+      let enableEditing = getURLParameter("enableEditing");
+      if (enableEditing == "true") {
+        document.getElementsByClassName("chk-editing")[0].checked = true;
+      }
+      let autoStart = getURLParameter("autoStart");
+      if (autoStart == "true") {
+        startDetecting();
+      }
     }
 
     function registerEvents(){
