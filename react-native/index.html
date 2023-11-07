@@ -13,7 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/dynamsoft-camera-enhancer@4.0.0/dist/dce.js"></script>
     <script src="utils.js"></script>
     <style>
-      .scanner {
+      .scanner, .editor {
         position: absolute;
         left: 0px;
         top: 0px;
@@ -46,6 +46,22 @@
         top: 20px;
         left: 0px;
       }
+      
+      .btn-confirm {
+        position: absolute;
+        top: 0px;
+        right: 0px;
+        height: 20px;
+        z-index: 10;
+      }
+
+      .btn-cancel {
+        position: absolute;
+        top: 20px;
+        right: 0px;
+        height: 20px;
+        z-index: 10;
+      }
 
       @keyframes dce-rotate {
         from { transform: rotate(0turn); }
@@ -70,8 +86,15 @@
           <option>Color</option>
         </select>
       </label>
-      
+      <label>
+        Enable Editing:
+        <input type="checkbox" class="chk-editing"/>
+      </label>
       <img class="captured" alt="captured"/>
+    </div>
+    <div class="editor">
+      <button class="btn-confirm">Confirm</button>
+      <button class="btn-cancel">Cancel</button>
     </div>
     <div class="scanner">
       <div class="dce-video-container"></div>
@@ -94,6 +117,8 @@
   <script>
     let defaultSettings = "";
     let cameraView;
+    let imageEditorView;
+    let layer;
     let router;
     let previousResults = [];
     let capturing = false;
@@ -114,6 +139,17 @@
       document.getElementsByClassName("btn-close")[0].addEventListener("click",function(){
         stopDetecting();
       })
+      document.getElementsByClassName("btn-confirm")[0].addEventListener("click",async function(){
+        let drawingItem = layer.getDrawingItems()[0];
+        let points = drawingItem.getQuad().points;
+        let image = imageEditorView.getOriginalImage();
+        let normalized = await normalizedImage(image,points);
+        displayNormalizedImage(normalized);
+        document.getElementsByClassName("editor")[0].style.display = "none";
+      })
+      document.getElementsByClassName("btn-cancel")[0].addEventListener("click",function(){
+        document.getElementsByClassName("editor")[0].style.display = "none";
+      })
     }
 
     async function initCVR(){
@@ -129,6 +165,32 @@
       cameraEnhancer = await Dynamsoft.DCE.CameraEnhancer.createInstance(
         cameraView
       );
+    }
+
+    async function initEditor(){
+      if (!imageEditorView) {
+        let imageEditorViewContainer = document.getElementsByClassName("editor")[0];
+        imageEditorView = await Dynamsoft.DCE.ImageEditorView.createInstance(
+          imageEditorViewContainer
+        );
+        /* Creates an image editing layer for drawing found document boundaries. */
+        layer = imageEditorView.createDrawingLayer();
+      }
+    }
+
+    function showEditor(image,detectionResult){
+      layer.clearDrawingItems();
+      document.getElementsByClassName("editor")[0].style.display = "block";
+      /* Draws the image on the imageEditorView first. */
+      imageEditorView.setOriginalImage(image);
+      quads = [];
+      /* Draws the document boundary (quad) over the image. */
+      const points = detectionResult.location.points;
+      const quad = new Dynamsoft.DCE.DrawingItem.QuadDrawingItem({
+        points,
+      });
+      quads.push(quad);
+      layer.addDrawingItems(quads);
     }
 
     async function handleCapturedResult(result) {
@@ -161,19 +223,31 @@
 
     async function captureFrame(detectionResult){
       let image = cameraEnhancer.fetchImage();
+      if (document.getElementsByClassName("chk-editing")[0].checked) {
+        await initEditor();
+        showEditor(image, detectionResult);
+      }else{
+        let normalized = await normalizedImage(image,detectionResult.location.points);
+        displayNormalizedImage(normalized);
+      }
+    }
+
+    function displayNormalizedImage(normalized){
       let imgEl = document.getElementsByClassName("captured")[0];
-      imgEl.src = (await normalizedImage(image,detectionResult));
+      imgEl.src = normalized;
       imgEl.style.display = "block";
     }
 
-    async function normalizedImage(image,detectionResult){
+    async function normalizedImage(image,points){
+      console.log("normalize");
+      console.log(image);
+      console.log(points);
       let settings = await router.getSimplifiedSettings(
         "normalize-document"
       );
       settings.roiMeasuredInPercentage = 0;
-      settings.roi.points = detectionResult.location.points;
+      settings.roi.points = points;
       await router.updateSettings("normalize-document", settings);
-      await saveDefaultSettings();
       await updateColorMode();
       let normalizeResult = await router.capture(image,"");
       return normalizeResult.items[0].toCanvas().toDataURL();
@@ -189,15 +263,10 @@
       }else{
         str = "ICM_COLOUR";
       }
-      let settingsString = defaultSettings.replace("ICM_COLOUR",str);
+      let settingsObject = await router.outputSettings("normalize-document");
+      let settingsString = JSON.stringify(settingsObject);
+      settingsString = settingsString.replace("ICM_COLOUR",str);
       await router.initSettings(settingsString);
-    }
-
-    async function saveDefaultSettings(){
-      if (!defaultSettings) {
-        let settingsObject = await router.outputSettings();
-        defaultSettings = JSON.stringify(settingsObject);
-      }
     }
 
     function steady() {
