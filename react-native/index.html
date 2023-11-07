@@ -11,6 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/dynamsoft-document-normalizer@2.0.11/dist/ddn.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dynamsoft-capture-vision-router@2.0.11/dist/cvr.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dynamsoft-camera-enhancer@4.0.0/dist/dce.js"></script>
+    <script src="utils.js"></script>
     <style>
       .scanner {
         position: absolute;
@@ -50,12 +51,18 @@
         from { transform: rotate(0turn); }
         to { transform: rotate(1turn); }
       }
+
+      .captured {
+        display: none;
+        max-width: 100%;
+      }
     </style>
 </head>
 <body>
   <div id="app">
     <div class="home">
       <button class="btn-start-scanning">Start Scanning</button>
+      <img class="captured" alt="captured"/>
     </div>
     <div class="scanner">
       <div class="dce-video-container"></div>
@@ -78,6 +85,7 @@
   <script>
     let cameraView;
     let router;
+    let previousResults = [];
     window.onload = async function(){
       Dynamsoft.License.LicenseManager.initLicense(
         "DLS2eyJvcmdhbml6YXRpb25JRCI6IjIwMDAwMSJ9"
@@ -105,10 +113,6 @@
       router.addResultReceiver(resultReceiver);
     }
 
-    async function handleCapturedResult(result) {
-      console.log(result);
-    }
-    
     async function initDCE() {
       let cameraView = await Dynamsoft.DCE.CameraView.createInstance(document.getElementsByClassName("scanner")[0]);
       cameraEnhancer = await Dynamsoft.DCE.CameraEnhancer.createInstance(
@@ -116,18 +120,52 @@
       );
     }
 
+    async function handleCapturedResult(result) {
+      let detectionResult = result.items[0];
+      if (previousResults.length >= 2) {
+        previousResults.push(detectionResult)
+        if (steady() == true) {
+          console.log("steady");
+          captureFrame(detectionResult);
+          stopDetecting();
+        }else{
+          console.log("shift result");
+          previousResults.shift();
+        }
+      }else{
+        console.log("add result");
+        previousResults.push(detectionResult);
+      }
+    }
+
+    function captureFrame(detectionResult){
+      let image = cameraEnhancer.fetchImage();
+      let imgEl = document.getElementsByClassName("captured")[0];
+      imgEl.src = image.toCanvas().toDataURL();
+      imgEl.style.display = "block";
+    }
+
+    function steady() {
+      let iou1 = intersectionOverUnion(previousResults[0].location.points,previousResults[1].location.points);
+      let iou2 = intersectionOverUnion(previousResults[1].location.points,previousResults[2].location.points);
+      let iou3 = intersectionOverUnion(previousResults[0].location.points,previousResults[2].location.points);
+      if (iou1>0.9 && iou2>0.9 && iou3>0.9) {
+        return true;
+      }else{
+        return false;
+      }
+    }
+    
     async function startDetecting(){
       console.log("startDetecting");
+      previousResults = [];
       document.getElementsByClassName("scanner")[0].style.display = "block";
       await cameraEnhancer.open();
       await router.startCapturing("detect-document-boundaries");
     }
 
-    function detectFrame(){
-      let image = cameraEnhancer.fetchImage();
-    }
-
     async function stopDetecting(){
+      previousResults = [];
       cameraEnhancer.close();
       document.getElementsByClassName("scanner")[0].style.display = "none";
       await router.stopCapturing();
