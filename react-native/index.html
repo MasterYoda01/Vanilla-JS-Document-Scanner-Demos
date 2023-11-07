@@ -167,8 +167,7 @@
       await router.updateSettings("normalize-document", settings);
       await saveDefaultSettings();
       await updateColorMode();
-      let normalizeResult = await router.capture(image.toCanvas(),"");
-      console.log(normalizeResult);
+      let normalizeResult = await router.capture(image,"");
       return normalizeResult.items[0].toCanvas().toDataURL();
     }
 
