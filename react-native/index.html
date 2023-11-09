@@ -11,6 +11,8 @@
     <script src="https://cdn.jsdelivr.net/npm/dynamsoft-document-normalizer@2.0.11/dist/ddn.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dynamsoft-capture-vision-router@2.0.11/dist/cvr.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dynamsoft-camera-enhancer@4.0.0/dist/dce.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>eruda.init();</script>
     <script src="utils.js"></script>
     <style>
       .scanner, .editor {
@@ -187,6 +189,7 @@
       cameraEnhancer = await Dynamsoft.DCE.CameraEnhancer.createInstance(
         cameraView
       );
+      cameraEnhancer.setImageFetchInterval(1000);
     }
 
     async function initEditor(){
@@ -312,6 +315,10 @@
         reset();
         document.getElementsByClassName("scanner")[0].style.display = "block";
         await cameraEnhancer.open();
+        const resetTimeInterval = function(){
+          cameraEnhancer.setImageFetchInterval(200);
+        }
+        setTimeout(resetTimeInterval,1000);
         await router.resetSettings();
         await router.startCapturing("detect-document-boundaries");
       }else{
