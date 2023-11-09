@@ -74,6 +74,20 @@
         display: none;
         max-width: 100%;
       }
+
+      .status-mask {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10;
+        background-color: rgba(0,0,0,120);
+        color: white;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
     </style>
 </head>
 <body>
@@ -114,6 +128,9 @@
         <option data-width="640" data-height="480">640x480</option>
       </select>
       <button class="btn-close">Close</button>
+    </div>
+    <div class="status-mask">
+      Processing...
     </div>
   </div>
   <script>
@@ -268,9 +285,7 @@
     }
 
     async function normalizedImage(image,points){
-      console.log("normalize");
-      console.log(image);
-      console.log(points);
+      document.getElementsByClassName("status-mask")[0].style.display = "flex";
       let settings = await router.getSimplifiedSettings(
         "normalize-document"
       );
@@ -279,7 +294,9 @@
       await router.updateSettings("normalize-document", settings);
       await updateColorMode();
       let normalizeResult = await router.capture(image,"");
-      return normalizeResult.items[0].toCanvas().toDataURL();
+      let dataURL = normalizeResult.items[0].toCanvas().toDataURL();
+      document.getElementsByClassName("status-mask")[0].style.display = "none";
+      return dataURL;
     }
 
     async function updateColorMode() {
