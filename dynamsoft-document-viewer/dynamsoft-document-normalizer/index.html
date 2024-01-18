@@ -196,7 +196,7 @@
       })
 
       async function detect(source){
-        this.cvr.maxCvsSideLength = 99999;
+        router.maxCvsSideLength = 99999;
         const results = await router.capture(source, 'DetectDocumentBoundaries_Default', true);
         const points = [];
         if (results && results.items.length>0) {
@@ -218,7 +218,7 @@
         settings.roiMeasuredInPercentage = 0;
         settings.roi.points = points;
         await router.updateSettings("NormalizeDocument_Default", settings);
-        this.cvr.maxCvsSideLength = 99999;
+        router.maxCvsSideLength = 99999;
         const normalizeResult = await router.capture(source,"NormalizeDocument_Default", true);
         if (normalizeResult.items.length>0) {
           document.getElementById("output").src = normalizeResult.items[0].toCanvas().toDataURL();
