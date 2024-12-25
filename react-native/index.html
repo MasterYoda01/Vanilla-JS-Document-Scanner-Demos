@@ -201,11 +201,13 @@
           .addEventListener("click", function () {
             startDetecting();
           });
+
         document
           .getElementsByClassName("btn-close")[0]
           .addEventListener("click", function () {
             stopDetecting();
           });
+
         document
           .getElementsByClassName("btn-confirm")[0]
           .addEventListener("click", async function () {
@@ -216,15 +218,14 @@
             displayNormalizedImage(normalized);
             document.getElementsByClassName("editor")[0].style.display = "none";
           });
+
         document
           .getElementsByClassName("btn-cancel")[0]
-          .addEventListener("click", function () {
-            if (window.ReactNativeWebView) {
-              window.ReactNativeWebView.postMessage("");
-            } else {
-              document.getElementsByClassName("editor")[0].style.display =
-                "none";
-            }
+          .addEventListener("click", async function () {
+            console.log("Cancel button clicked"); // Debugging log
+            document.getElementsByClassName("editor")[0].style.display = "none";
+            reset(); // Reset scanning state
+            await startDetecting(); // Restart scanning
           });
       }
 
@@ -383,13 +384,16 @@
           reset();
           document.getElementsByClassName("scanner")[0].style.display = "block";
           await cameraEnhancer.open();
-          //const resetTimeInterval = function(){
-          //  cameraEnhancer.setImageFetchInterval(200);
-          //}
-          //setTimeout(resetTimeInterval,1000);
-          await router.resetSettings();
-          await router.startCapturing("detect-document-boundaries");
+          const resetTimeInterval = function () {
+            //here
+            cameraEnhancer.setImageFetchInterval(200);
+          };
+          setTimeout(resetTimeInterval, 1000); // to here
+          await router.resetSettings(); // Reset the router
+          await router.startCapturing("detect-document-boundaries"); // Start detection
+          console.log("Detection started"); // Debugging log
         } else {
+          console.log("Router or camera enhancer not initialized");
           alert("Please wait for initialization.");
         }
       }
@@ -405,6 +409,7 @@
       }
 
       function reset() {
+        console.log("Resetting state");
         previousResults = [];
         capturing = false;
       }
