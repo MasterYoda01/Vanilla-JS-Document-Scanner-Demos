@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Quickly detect document boundaries from a live camera stream and crop the document out before normalizing it further through perspective correction, deskewing, and more." />
-    <meta name="keywords" content="camera based quadrilateral detection and normalization" />
+    <meta
+      name="description"
+      content="Quickly detect document boundaries from a live camera stream and crop the document out before normalizing it further through perspective correction, deskewing, and more."
+    />
+    <meta
+      name="keywords"
+      content="camera based quadrilateral detection and normalization"
+    />
     <title>Detect the boundary of a document and normalize it</title>
     <script src="https://cdn.jsdelivr.net/npm/dynamsoft-core@3.0.30/dist/core.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dynamsoft-license@3.0.20/dist/license.js"></script>
@@ -17,7 +22,8 @@
     <script>eruda.init();</script>-->
     <script src="utils.js"></script>
     <style>
-      .scanner, .editor {
+      .scanner,
+      .editor {
         position: absolute;
         left: 0px;
         top: 0px;
@@ -50,7 +56,7 @@
         top: 20px;
         left: 0px;
       }
-      
+
       .btn-confirm {
         position: absolute;
         top: 0px;
@@ -68,8 +74,12 @@
       }
 
       @keyframes dce-rotate {
-        from { transform: rotate(0turn); }
-        to { transform: rotate(1turn); }
+        from {
+          transform: rotate(0turn);
+        }
+        to {
+          transform: rotate(1turn);
+        }
       }
 
       .captured {
@@ -84,282 +94,320 @@
         width: 100%;
         height: 100%;
         z-index: 10;
-        background-color: rgba(0,0,0,120);
+        background-color: rgba(0, 0, 0, 120);
         color: white;
         display: none;
         align-items: center;
         justify-content: center;
       }
     </style>
-</head>
-<body>
-  <div id="app">
-    <div class="home">
-      <button class="btn-start-scanning">Start Scanning</button>
-      <label>
-        Color Mode:
-        <select class="sel-color-mode">
-          <option selected>Black & White</option>
-          <option>Gray</option>
-          <option>Color</option>
+  </head>
+  <body>
+    <div id="app">
+      <div class="home">
+        <button class="btn-start-scanning">Start Scanning</button>
+        <label>
+          Color Mode:
+          <select class="sel-color-mode">
+            <option selected>Black & White</option>
+            <option>Gray</option>
+            <option>Color</option>
+          </select>
+        </label>
+        <label>
+          Enable Editing:
+          <input type="checkbox" class="chk-editing" />
+        </label>
+        <img class="captured" alt="captured" />
+      </div>
+      <div class="editor">
+        <button class="btn-confirm">Confirm</button>
+        <button class="btn-cancel">Cancel</button>
+      </div>
+      <div class="scanner">
+        <div class="dce-video-container"></div>
+        <svg
+          class="dce-bg-loading"
+          style="
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            margin: auto;
+            width: 40%;
+            height: 40%;
+            fill: #aaa;
+            animation: 1s linear infinite dce-rotate;
+          "
+          viewBox="0 0 1792 1792"
+        >
+          <path
+            d="M1760 896q0 176-68.5 336t-184 275.5-275.5 184-336 68.5-336-68.5-275.5-184-184-275.5-68.5-336q0-213 97-398.5t265-305.5 374-151v228q-221 45-366.5 221t-145.5 406q0 130 51 248.5t136.5 204 204 136.5 248.5 51 248.5-51 204-136.5 136.5-204 51-248.5q0-230-145.5-406t-366.5-221v-228q206 31 374 151t265 305.5 97 398.5z"
+          />
+        </svg>
+        <select class="dce-sel-camera"></select>
+        <select class="dce-sel-resolution">
+          <option class="dce-opt-gotResolution" value="got"></option>
+          <option data-width="3840" data-height="2160">3840x2160</option>
+          <option data-width="1920" data-height="1080">1920x1080</option>
+          <option data-width="1280" data-height="720">1280x720</option>
+          <option data-width="640" data-height="480">640x480</option>
         </select>
-      </label>
-      <label>
-        Enable Editing:
-        <input type="checkbox" class="chk-editing"/>
-      </label>
-      <img class="captured" alt="captured"/>
+        <button class="btn-close">Close</button>
+      </div>
+      <div class="status-mask">Processing...</div>
     </div>
-    <div class="editor">
-      <button class="btn-confirm">Confirm</button>
-      <button class="btn-cancel">Cancel</button>
-    </div>
-    <div class="scanner">
-      <div class="dce-video-container"></div>
-      <svg class="dce-bg-loading"
-        style="display:none;position:absolute;left:0;top:0;right:0;bottom:0;margin:auto;width:40%;height:40%;fill:#aaa;animation:1s linear infinite dce-rotate;"
-        viewBox="0 0 1792 1792">
-        <path d="M1760 896q0 176-68.5 336t-184 275.5-275.5 184-336 68.5-336-68.5-275.5-184-184-275.5-68.5-336q0-213 97-398.5t265-305.5 374-151v228q-221 45-366.5 221t-145.5 406q0 130 51 248.5t136.5 204 204 136.5 248.5 51 248.5-51 204-136.5 136.5-204 51-248.5q0-230-145.5-406t-366.5-221v-228q206 31 374 151t265 305.5 97 398.5z" />
-      </svg>
-      <select class="dce-sel-camera"></select>
-      <select class="dce-sel-resolution">
-        <option class="dce-opt-gotResolution" value="got"></option>
-        <option data-width="3840" data-height="2160">3840x2160</option>
-        <option data-width="1920" data-height="1080">1920x1080</option>
-        <option data-width="1280" data-height="720">1280x720</option>
-        <option data-width="640" data-height="480">640x480</option>
-      </select>
-      <button class="btn-close">Close</button>
-    </div>
-    <div class="status-mask">
-      Processing...
-    </div>
-  </div>
-  <script>
-    let defaultSettings = "";
-    let cameraView;
-    let imageEditorView;
-    let layer;
-    let router;
-    let previousResults = [];
-    let capturing = false;
-    window.onload = async function(){
-      let license = getURLParameter("license");
-      if (!license) {
-         license = "DLS2eyJoYW5kc2hha2VDb2RlIjoiMjAwMDAxLTE2NDk4Mjk3OTI2MzUiLCJvcmdhbml6YXRpb25JRCI6IjIwMDAwMSIsInNlc3Npb25QYXNzd29yZCI6IndTcGR6Vm05WDJrcEQ5YUoifQ==";
-      }
-      Dynamsoft.License.LicenseManager.initLicense(
-        license
-      );
-      Dynamsoft.Core.CoreModule.loadWasm(["DDN"]);
-      await initDCE();
-      await initCVR();
-      registerEvents();
-      parseURLParams();
-    }
+    <script>
+      let defaultSettings = "";
+      let cameraView;
+      let imageEditorView;
+      let layer;
+      let router;
+      let previousResults = [];
+      let capturing = false;
+      window.onload = async function () {
+        let license = getURLParameter("license");
+        if (!license) {
+          license =
+            "DLS2eyJoYW5kc2hha2VDb2RlIjoiMjAwMDAxLTE2NDk4Mjk3OTI2MzUiLCJvcmdhbml6YXRpb25JRCI6IjIwMDAwMSIsInNlc3Npb25QYXNzd29yZCI6IndTcGR6Vm05WDJrcEQ5YUoifQ==";
+        }
+        Dynamsoft.License.LicenseManager.initLicense(license);
+        Dynamsoft.Core.CoreModule.loadWasm(["DDN"]);
+        await initDCE();
+        await initCVR();
+        registerEvents();
+        parseURLParams();
+      };
 
-    function parseURLParams(){
-      let colorMode = parseInt(getURLParameter("colorMode"));
-      document.getElementsByClassName("sel-color-mode")[0].selectedIndex = colorMode;
-      let enableEditing = getURLParameter("enableEditing");
-      if (enableEditing == "true") {
-        document.getElementsByClassName("chk-editing")[0].checked = true;
+      function parseURLParams() {
+        let colorMode = parseInt(getURLParameter("colorMode"));
+        document.getElementsByClassName("sel-color-mode")[0].selectedIndex =
+          colorMode;
+        let enableEditing = getURLParameter("enableEditing");
+        if (enableEditing == "true") {
+          document.getElementsByClassName("chk-editing")[0].checked = true;
+        }
+        let autoStart = getURLParameter("autoStart");
+        if (autoStart == "true") {
+          startDetecting();
+        }
       }
-      let autoStart = getURLParameter("autoStart");
-      if (autoStart == "true") {
-        startDetecting();
-      }
-    }
 
-    function registerEvents(){
-      document.getElementsByClassName("btn-start-scanning")[0].addEventListener("click",function(){
-        startDetecting();
-      })
-      document.getElementsByClassName("btn-close")[0].addEventListener("click",function(){
-        stopDetecting();
-      })
-      document.getElementsByClassName("btn-confirm")[0].addEventListener("click",async function(){
-        let drawingItem = layer.getDrawingItems()[0];
-        let points = drawingItem.getQuad().points;
-        let image = imageEditorView.getOriginalImage();
-        let normalized = await normalizedImage(image,points);
-        displayNormalizedImage(normalized);
-        document.getElementsByClassName("editor")[0].style.display = "none";
-      })
-      document.getElementsByClassName("btn-cancel")[0].addEventListener("click",function(){
+      function registerEvents() {
+        document
+          .getElementsByClassName("btn-start-scanning")[0]
+          .addEventListener("click", function () {
+            startDetecting();
+          });
+        document
+          .getElementsByClassName("btn-close")[0]
+          .addEventListener("click", function () {
+            stopDetecting();
+          });
+        document
+          .getElementsByClassName("btn-confirm")[0]
+          .addEventListener("click", async function () {
+            let drawingItem = layer.getDrawingItems()[0];
+            let points = drawingItem.getQuad().points;
+            let image = imageEditorView.getOriginalImage();
+            let normalized = await normalizedImage(image, points);
+            displayNormalizedImage(normalized);
+            document.getElementsByClassName("editor")[0].style.display = "none";
+          });
+        document
+          .getElementsByClassName("btn-cancel")[0]
+          .addEventListener("click", function () {
+            if (window.ReactNativeWebView) {
+              window.ReactNativeWebView.postMessage("");
+            } else {
+              document.getElementsByClassName("editor")[0].style.display =
+                "none";
+            }
+          });
+      }
+
+      async function initCVR() {
+        router = await Dynamsoft.CVR.CaptureVisionRouter.createInstance();
+        router.setInput(cameraEnhancer);
+        const resultReceiver = new Dynamsoft.CVR.CapturedResultReceiver();
+        resultReceiver.onCapturedResultReceived = handleCapturedResult;
+        router.addResultReceiver(resultReceiver);
+      }
+
+      async function initDCE() {
+        let cameraView = await Dynamsoft.DCE.CameraView.createInstance(
+          document.getElementsByClassName("scanner")[0]
+        );
+        cameraEnhancer = await Dynamsoft.DCE.CameraEnhancer.createInstance(
+          cameraView
+        );
+        //cameraEnhancer.setImageFetchInterval(1000);
+      }
+
+      async function initEditor() {
+        if (!imageEditorView) {
+          let imageEditorViewContainer =
+            document.getElementsByClassName("editor")[0];
+          imageEditorView = await Dynamsoft.DCE.ImageEditorView.createInstance(
+            imageEditorViewContainer
+          );
+          /* Creates an image editing layer for drawing found document boundaries. */
+          layer = imageEditorView.createDrawingLayer();
+        }
+      }
+
+      function showEditor(image, detectionResult) {
+        layer.clearDrawingItems();
+        document.getElementsByClassName("editor")[0].style.display = "block";
+        /* Draws the image on the imageEditorView first. */
+        imageEditorView.setOriginalImage(image);
+        quads = [];
+        /* Draws the document boundary (quad) over the image. */
+        const points = detectionResult.location.points;
+        const quad = new Dynamsoft.DCE.DrawingItem.QuadDrawingItem({
+          points,
+        });
+        quads.push(quad);
+        layer.addDrawingItems(quads);
+      }
+
+      async function handleCapturedResult(result) {
+        let detectionResult = result.items[0];
+        if (detectionResult) {
+          if (previousResults.length >= 2) {
+            previousResults.push(detectionResult);
+            if (steady() == true) {
+              if (capturing == false) {
+                console.log("steady");
+                capturing = true;
+                try {
+                  let image = cameraEnhancer.fetchImage();
+                  stopDetecting();
+                  await normalizeFrame(image, detectionResult);
+                } catch (error) {
+                  console.log(error);
+                  reset();
+                }
+              }
+            } else {
+              console.log("shift result");
+              previousResults.shift();
+            }
+          } else {
+            console.log("add result");
+            previousResults.push(detectionResult);
+          }
+        }
+      }
+
+      async function normalizeFrame(image, detectionResult) {
+        if (document.getElementsByClassName("chk-editing")[0].checked) {
+          await initEditor();
+          showEditor(image, detectionResult);
+        } else {
+          let normalized = await normalizedImage(
+            image,
+            detectionResult.location.points
+          );
+          displayNormalizedImage(normalized);
+        }
+      }
+
+      function displayNormalizedImage(normalized) {
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(normalized);
+        } else {
+          let imgEl = document.getElementsByClassName("captured")[0];
+          imgEl.src = normalized;
+          imgEl.style.display = "block";
+        }
+      }
+
+      async function normalizedImage(image, points) {
+        document.getElementsByClassName("status-mask")[0].style.display =
+          "flex";
+        let settings = await router.getSimplifiedSettings("normalize-document");
+        settings.roiMeasuredInPercentage = 0;
+        settings.roi.points = points;
+        await router.updateSettings("normalize-document", settings);
+        await updateColorMode();
+        let normalizeResult = await router.capture(image, "");
+        let dataURL = normalizeResult.items[0].toCanvas().toDataURL();
+        document.getElementsByClassName("status-mask")[0].style.display =
+          "none";
+        return dataURL;
+      }
+
+      async function updateColorMode() {
+        let str;
+        let colorMode =
+          document.getElementsByClassName("sel-color-mode")[0].selectedIndex;
+        if (colorMode == 0) {
+          str = "ICM_BINARY";
+        } else if (colorMode == 1) {
+          str = "ICM_GRAYSCALE";
+        } else {
+          str = "ICM_COLOUR";
+        }
+        let settingsObject = await router.outputSettings("normalize-document");
+        let settingsString = JSON.stringify(settingsObject);
+        settingsString = settingsString.replace("ICM_COLOUR", str);
+        await router.initSettings(settingsString);
+      }
+
+      function steady() {
+        let iou1 = intersectionOverUnion(
+          previousResults[0].location.points,
+          previousResults[1].location.points
+        );
+        let iou2 = intersectionOverUnion(
+          previousResults[1].location.points,
+          previousResults[2].location.points
+        );
+        let iou3 = intersectionOverUnion(
+          previousResults[0].location.points,
+          previousResults[2].location.points
+        );
+        if (iou1 > 0.9 && iou2 > 0.9 && iou3 > 0.9) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+
+      async function startDetecting() {
+        if (router && cameraEnhancer) {
+          console.log("startDetecting");
+          reset();
+          document.getElementsByClassName("scanner")[0].style.display = "block";
+          await cameraEnhancer.open();
+          //const resetTimeInterval = function(){
+          //  cameraEnhancer.setImageFetchInterval(200);
+          //}
+          //setTimeout(resetTimeInterval,1000);
+          await router.resetSettings();
+          await router.startCapturing("detect-document-boundaries");
+        } else {
+          alert("Please wait for initialization.");
+        }
+      }
+
+      async function stopDetecting() {
+        reset();
+        cameraEnhancer.close();
+        document.getElementsByClassName("scanner")[0].style.display = "none";
+        await router.stopCapturing();
         if (window.ReactNativeWebView) {
           window.ReactNativeWebView.postMessage("");
-        }else{
-          document.getElementsByClassName("editor")[0].style.display = "none";
-        }
-      })
-    }
-
-    async function initCVR(){
-      router = await Dynamsoft.CVR.CaptureVisionRouter.createInstance();
-      router.setInput(cameraEnhancer);
-      const resultReceiver = new Dynamsoft.CVR.CapturedResultReceiver();
-      resultReceiver.onCapturedResultReceived = handleCapturedResult;
-      router.addResultReceiver(resultReceiver);
-    }
-
-    async function initDCE() {
-      let cameraView = await Dynamsoft.DCE.CameraView.createInstance(document.getElementsByClassName("scanner")[0]);
-      cameraEnhancer = await Dynamsoft.DCE.CameraEnhancer.createInstance(
-        cameraView
-      );
-      //cameraEnhancer.setImageFetchInterval(1000);
-    }
-
-    async function initEditor(){
-      if (!imageEditorView) {
-        let imageEditorViewContainer = document.getElementsByClassName("editor")[0];
-        imageEditorView = await Dynamsoft.DCE.ImageEditorView.createInstance(
-          imageEditorViewContainer
-        );
-        /* Creates an image editing layer for drawing found document boundaries. */
-        layer = imageEditorView.createDrawingLayer();
-      }
-    }
-
-    function showEditor(image,detectionResult){
-      layer.clearDrawingItems();
-      document.getElementsByClassName("editor")[0].style.display = "block";
-      /* Draws the image on the imageEditorView first. */
-      imageEditorView.setOriginalImage(image);
-      quads = [];
-      /* Draws the document boundary (quad) over the image. */
-      const points = detectionResult.location.points;
-      const quad = new Dynamsoft.DCE.DrawingItem.QuadDrawingItem({
-        points,
-      });
-      quads.push(quad);
-      layer.addDrawingItems(quads);
-    }
-
-    async function handleCapturedResult(result) {
-      let detectionResult = result.items[0];
-      if (detectionResult) {
-        if (previousResults.length >= 2) {
-          previousResults.push(detectionResult)
-          if (steady() == true) {
-            if (capturing == false) {
-              console.log("steady");
-              capturing = true;
-              try {
-                let image = cameraEnhancer.fetchImage();
-                stopDetecting();
-                await normalizeFrame(image,detectionResult);
-              } catch (error) {
-                console.log(error);
-                reset();
-              }
-            }
-          }else{
-            console.log("shift result");
-            previousResults.shift();
-          }
-        }else{
-          console.log("add result");
-          previousResults.push(detectionResult);
         }
       }
-    }
 
-    async function normalizeFrame(image,detectionResult){
-      if (document.getElementsByClassName("chk-editing")[0].checked) {
-        await initEditor();
-        showEditor(image, detectionResult);
-      }else{
-        let normalized = await normalizedImage(image,detectionResult.location.points);
-        displayNormalizedImage(normalized);
+      function reset() {
+        previousResults = [];
+        capturing = false;
       }
-    }
-
-    function displayNormalizedImage(normalized){
-      if (window.ReactNativeWebView) {
-        window.ReactNativeWebView.postMessage(normalized);
-      }else{
-        let imgEl = document.getElementsByClassName("captured")[0];
-        imgEl.src = normalized;
-        imgEl.style.display = "block";
-      }
-    }
-
-    async function normalizedImage(image,points){
-      document.getElementsByClassName("status-mask")[0].style.display = "flex";
-      let settings = await router.getSimplifiedSettings(
-        "normalize-document"
-      );
-      settings.roiMeasuredInPercentage = 0;
-      settings.roi.points = points;
-      await router.updateSettings("normalize-document", settings);
-      await updateColorMode();
-      let normalizeResult = await router.capture(image,"");
-      let dataURL = normalizeResult.items[0].toCanvas().toDataURL();
-      document.getElementsByClassName("status-mask")[0].style.display = "none";
-      return dataURL;
-    }
-
-    async function updateColorMode() {
-      let str;
-      let colorMode = document.getElementsByClassName("sel-color-mode")[0].selectedIndex;
-      if (colorMode == 0) {
-        str = "ICM_BINARY";
-      }else if (colorMode == 1) {
-        str = "ICM_GRAYSCALE";
-      }else{
-        str = "ICM_COLOUR";
-      }
-      let settingsObject = await router.outputSettings("normalize-document");
-      let settingsString = JSON.stringify(settingsObject);
-      settingsString = settingsString.replace("ICM_COLOUR",str);
-      await router.initSettings(settingsString);
-    }
-
-    function steady() {
-      let iou1 = intersectionOverUnion(previousResults[0].location.points,previousResults[1].location.points);
-      let iou2 = intersectionOverUnion(previousResults[1].location.points,previousResults[2].location.points);
-      let iou3 = intersectionOverUnion(previousResults[0].location.points,previousResults[2].location.points);
-      if (iou1>0.9 && iou2>0.9 && iou3>0.9) {
-        return true;
-      }else{
-        return false;
-      }
-    }
-    
-    async function startDetecting(){
-      if (router && cameraEnhancer) {
-        console.log("startDetecting");
-        reset();
-        document.getElementsByClassName("scanner")[0].style.display = "block";
-        await cameraEnhancer.open();
-        //const resetTimeInterval = function(){
-        //  cameraEnhancer.setImageFetchInterval(200);
-        //}
-        //setTimeout(resetTimeInterval,1000);
-        await router.resetSettings();
-        await router.startCapturing("detect-document-boundaries");
-      }else{
-        alert("Please wait for initialization.")
-      }
-    }
-
-    async function stopDetecting(){
-      reset();
-      cameraEnhancer.close();
-      document.getElementsByClassName("scanner")[0].style.display = "none";
-      await router.stopCapturing();
-      if (window.ReactNativeWebView) {
-        window.ReactNativeWebView.postMessage("");
-      }
-    }
-
-    function reset(){
-      previousResults = [];
-      capturing = false;
-    }
-
-  </script>
-</body>
+    </script>
+  </body>
 </html>
