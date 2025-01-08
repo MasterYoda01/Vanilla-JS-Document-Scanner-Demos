@@ -69,24 +69,24 @@
       <h2>Dynamsoft Document Scanner</h2>
       <div id="status">Loading...</div>
       <div>
-        <button id="loadFileBtn">Load File</button>
-        <button id="detectBtn">Detect</button>
+        <!-- <button id="loadFileBtn">Load File</button>
+        <button id="detectBtn">Detect</button> -->
         <button id="liveScanBtn">Live Scan</button>
-        <!-- Finish Button -->
         <button id="finishBtn" style="display: none">Finish</button>
       </div>
       <div>
-        <label>
+        <!-- <label>
           Enable Editing:
           <input type="checkbox" id="enableEditing" />
-        </label>
-        <input
+        </label> -->
+
+        <!-- <input
           style="display: none"
           type="file"
           id="file"
           onchange="loadImageFromFile();"
           accept=".jpg,.jpeg,.png,.bmp"
-        />
+        /> -->
       </div>
       <div class="result">
         <div class="original">
@@ -114,10 +114,11 @@
         const license =
           "DLS2eyJoYW5kc2hha2VDb2RlIjoiMTAzNTIzNTc4LVRYbFFjbTlxIiwibWFpblNlcnZlclVSTCI6Imh0dHBzOi8vbWRscy5keW5hbXNvZnRvbmxpbmUuY29tIiwib3JnYW5pemF0aW9uSUQiOiIxMDM1MjM1NzgiLCJzdGFuZGJ5U2VydmVyVVJMIjoiaHR0cHM6Ly9zZGxzLmR5bmFtc29mdG9ubGluZS5jb20iLCJjaGVja0NvZGUiOi0xMDc5MzQzMzV9";
         await Dynamsoft.DDV.setConfig({
-          license: license, // Public trial license which is valid for 24 hours
+          license: license,
           engineResourcePath:
             "https://cdn.jsdelivr.net/npm/dynamsoft-document-viewer@1.0.0/dist/engine",
         });
+
         docManager = Dynamsoft.DDV.documentManager;
         doc = docManager.createDocument({
           name: "doc",
@@ -125,7 +126,7 @@
         captureViewer = new Dynamsoft.DDV.CaptureViewer({
           container: document.getElementById("captureViewer"),
           viewerConfig: {
-            enableAutoCapture: true,
+            enableAutoCapture: false,
             enableAutoDetect: true,
           },
         });
@@ -139,7 +140,7 @@
           let url = URL.createObjectURL(pageData.raw.data);
           document.getElementById("photo").src = url;
           await loadImage(document.getElementById("photoRaw"), url);
-          await getCroppedImage();
+          // await getCroppedImage();
           captureViewer.currentDocument.deleteAllPages();
         });
 
@@ -149,7 +150,7 @@
 
         perspectiveViewer.on("done", async () => {
           const quad = perspectiveViewer.getQuadSelection();
-          await getCroppedImage(quad);
+          // await getCroppedImage(quad);
           perspectiveViewer.currentDocument.deleteAllPages();
         });
 
@@ -174,35 +175,35 @@
           }
         });
 
-      document.getElementById("file").addEventListener("change", function () {
-        loadImageFromFile();
-        showFinishButton();
-      });
+      // document.getElementById("file").addEventListener("change", function () {
+      //   loadImageFromFile();
+      //   showFinishButton();
+      // });
 
       document
         .getElementById("finishBtn")
         .addEventListener("click", finishScanning);
 
-      async function getCroppedImage(points) {
-        const source = document.getElementById("photoRaw");
-        let settings = await router.getSimplifiedSettings(
-          "NormalizeDocument_Default"
-        );
-        settings.roiMeasuredInPercentage = 0;
-        if (points) {
-          settings.roi.points = points;
-        }
-        await router.updateSettings("NormalizeDocument_Default", settings);
-        const normalizeResult = await router.capture(
-          source,
-          "NormalizeDocument_Default",
-          true
-        );
-        if (normalizeResult.items.length > 0) {
-          const finalImage = normalizeResult.items[0].toCanvas().toDataURL();
-          document.getElementById("output").src = finalImage;
-        }
-      }
+      // async function getCroppedImage(points) {
+      //   const source = document.getElementById("photoRaw");
+      //   let settings = await router.getSimplifiedSettings(
+      //     "NormalizeDocument_Default"
+      //   );
+      //   settings.roiMeasuredInPercentage = 0;
+      //   if (points) {
+      //     settings.roi.points = points;
+      //   }
+      //   await router.updateSettings("NormalizeDocument_Default", settings);
+      //   const normalizeResult = await router.capture(
+      //     source,
+      //     "NormalizeDocument_Default",
+      //     true
+      //   );
+      //   if (normalizeResult.items.length > 0) {
+      //     const finalImage = normalizeResult.items[0].toCanvas().toDataURL();
+      //     document.getElementById("output").src = finalImage;
+      //   }
+      // }
 
       async function loadImage(img, src) {
         return new Promise((resolve, reject) => {
@@ -211,27 +212,28 @@
         });
       }
 
-      function loadImageFromFile() {
-        let fileInput = document.getElementById("file");
-        let files = fileInput.files;
-        if (files.length == 0) {
-          return;
-        }
-        let file = files[0];
-        let fileReader = new FileReader();
-        fileReader.onload = function (e) {
-          document.getElementById("photo").src = e.target.result;
-          document.getElementById("photoRaw").src = e.target.result;
-        };
-        fileReader.onerror = function () {
-          console.warn("oops, something went wrong.");
-        };
-        fileReader.readAsDataURL(file);
-      }
+      // function loadImageFromFile() {
+      //   let fileInput = document.getElementById("file");
+      //   let files = fileInput.files;
+      //   if (files.length == 0) {
+      //     return;
+      //   }
+      //   let file = files[0];
+      //   let fileReader = new FileReader();
+      //   fileReader.onload = function (e) {
+      //     document.getElementById("photo").src = e.target.result;
+      //     document.getElementById("photoRaw").src = e.target.result;
+      //   };
+      //   fileReader.onerror = function () {
+      //     console.warn("oops, something went wrong.");
+      //   };
+      //   fileReader.readAsDataURL(file);
+      // }
 
       function finishScanning() {
         const finalImage = document.getElementById("output").src;
         if (window.ReactNativeWebView) {
+          console.log("Sending final image to React Native");
           window.ReactNativeWebView.postMessage(finalImage);
         }
       }
